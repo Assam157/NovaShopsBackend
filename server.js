@@ -28,15 +28,46 @@ app.set('trust proxy', 1);
 /* Core middleware                                                    */
 /* ------------------------------------------------------------------ */
 const allowedOrigins = CORS_ORIGINS.split(',').map((s) => s.trim());
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      cb(new Error(`CORS: origin ${origin} not allowed`));
+/* ------------------------------------------------------------------ */
+/* CORS — never throws, always sends ACAO for allowed origins         */
+/* ------------------------------------------------------------------ */
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim().replace(/\/$/, ''))   // strip trailing slashes
+  .filter(Boolean);
+
+console.log('🌐 Allowed CORS origins:', allowedOrigins);
+
+const corsOptions = {
+  origin: (origin, cb) => {
+    // No Origin header (curl, Postman, server-to-server): allow
+    if (!origin) return cb(null, true);
+
+    // Exact whitelist match
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+
+    // Allow any *.onrender.com subdomain
+    try {
+      const { hostname } = new URL(origin);
+      if (hostname.endsWith('.onrender.com')) return cb(null, true);
+    } catch {
+      // malformed origin — deny below
     }
-  })
-);
+
+    // Deny silently (no ACAO header). Do NOT throw — throwing breaks preflight.
+    console.warn(`⛔ CORS denied: ${origin}`);
+    return cb(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+// Explicit preflight handler — guarantees OPTIONS returns 200 with ACAO
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 /* ------------------------------------------------------------------ */
