@@ -31,10 +31,7 @@ const allowedOrigins = CORS_ORIGINS.split(',').map((s) => s.trim());
 /* ------------------------------------------------------------------ */
 /* CORS — never throws, always sends ACAO for allowed origins         */
 /* ------------------------------------------------------------------ */
-const allowedOrigins = (process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((s) => s.trim().replace(/\/$/, ''))   // strip trailing slashes
-  .filter(Boolean);
+ 
 
 console.log('🌐 Allowed CORS origins:', allowedOrigins);
 
