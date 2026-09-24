@@ -12,7 +12,7 @@ import Product from './models/product.js';
 
 const {
   PORT = 5000,
-  MONGO_URI = 'mongodb+srv://Maitreya:killdill12@cluster0.sk6ugig.mongodb.net/visiting_card?retryWrites=false',
+  MONGO_URI = process.env.Mongouri,
   JWT_SECRET = 'change-me',
   ADMIN_USERNAME = 'admin',
   ADMIN_PASSWORD = 'admin12',
